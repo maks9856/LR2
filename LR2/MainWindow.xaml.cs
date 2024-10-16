@@ -1,13 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace LR2
 {
@@ -19,6 +11,80 @@ namespace LR2
         public MainWindow()
         {
             InitializeComponent();
+            LoadProcessPriorities();
+        }
+
+        private void LoadProcessPriorities()
+        {
+            var process = new Process();
+            comboBoxPrioretary.Items.Clear();
+
+            foreach (var priority in process.GetProcessPriorities())
+            {
+                comboBoxPrioretary.Items.Add(priority);
+            }
+        }
+
+        private void LoadProcesses()
+        {
+            comboBoxRemove.Items.Clear();
+            comboBoxStoped.Items.Clear();
+            comboBoxChangePrioretary.Items.Clear();
+
+            var processManager = new Process(); 
+            foreach (var processId in processManager.GetProcessIds())
+            {
+                comboBoxRemove.Items.Add(processId);
+                comboBoxStoped.Items.Add(processId);
+                comboBoxChangePrioretary.Items.Add(processId);
+            }
+        }
+
+        private void ButtonCreate_Click(object sender, RoutedEventArgs e)
+        {
+            var process = new Process();
+            process.CreateProcesses((int)NumberUpDown.Value);
+            LoadProcesses();
+        }
+
+        private void ButtonRemove_Click(object sender, RoutedEventArgs e)
+        {
+            if (comboBoxRemove.SelectedItem is int selectedProcessId)
+            {
+                var process = new Process();
+                process.DeleteProcess(selectedProcessId);
+                LoadProcesses();
+            }
+            else
+            {
+                MessageBox.Show("Please select a process to remove.");
+            }
+        }
+
+        private void ButtonRemoveAll_Click(object sender, RoutedEventArgs e)
+        {
+            var process = new Process();
+            process.DeleteAllProcesses();
+            LoadProcesses();
+        }
+
+        private void ButtonChangePrioretary_Click(object sender, RoutedEventArgs e)
+        {
+            if (comboBoxChangePrioretary.SelectedItem is int selectedProcessId &&
+                comboBoxPrioretary.SelectedItem is ProcessPriorityClass newPriority)
+            {
+               var process=new Process();
+               process.ChangeProcessPriority(selectedProcessId, newPriority);
+            }
+            else
+            {
+                MessageBox.Show("Please select both a process and a new priority.");
+            }
+        }
+
+        private void ButtonStoped_Click(object sender, RoutedEventArgs e)
+        {
+            
         }
     }
 }

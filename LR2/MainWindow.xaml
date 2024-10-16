@@ -3,10 +3,36 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:local="clr-namespace:LR2"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="LR ROW TAILORA" Height="450" Width="800" WindowStartupLocation="CenterScreen">
+    <Grid  >
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
 
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto"  />
+            <ColumnDefinition Width="Auto" />
+
+        </Grid.ColumnDefinitions>
+        <Button Content="Створити" Grid.Column="0" Grid.Row="0" Margin="20 20 0 0" Name="ButtonCreate" VerticalAlignment="Top" HorizontalAlignment="Left" Width="100" Height="40" Click="ButtonCreate_Click" />
+        <Button Content="Видалити" Grid.Column="0"  Grid.Row="1" Margin="20 20 0 0" Name="ButtonRemove" VerticalAlignment="Top" HorizontalAlignment="Left" Width="100" Height="40" Click="ButtonRemove_Click"/>
+        <Button Content="Видалити всі" Grid.Column="0"  Grid.Row="2" Margin="20 20 0 0" Name="ButtonRemoveAll" VerticalAlignment="Top" HorizontalAlignment="Left" Width="100" Height="40" Click="ButtonRemoveAll_Click"/>
+        <Button Content="Зупинити" Grid.Column="0"  Grid.Row="3" Margin="20 20 0 0" Name="ButtonStoped" VerticalAlignment="Top" HorizontalAlignment="Left" Width="100" Height="40" Click="ButtonStoped_Click"/>
+        <Button Content="Зупинити всі" Grid.Column="0"  Grid.Row="4" Margin="20 20 0 0" Name="ButtonStopedAll" VerticalAlignment="Top" HorizontalAlignment="Left" Width="100" Height="40"/>
+        <Button Content="Змінити пріорітет" Grid.Column="0"  Grid.Row="5" Margin="20 20 0 0" Name="ButtonChangePrioretary" VerticalAlignment="Top" HorizontalAlignment="Left" Width="100" Height="40" Click="ButtonChangePrioretary_Click"/>
+        <xctk:IntegerUpDown x:Name="NumberUpDown" Grid.Row="0" Grid.Column="1" Value="0" Minimum="0" Maximum="8" Margin="10,20,141,0"/>
+        <ComboBox Name="comboBoxRemove" Grid.Column="1" HorizontalAlignment="Left" Margin="5,38,0,0" Grid.Row="1" VerticalAlignment="Top" Width="105" Height="22" />
+        <ComboBox Name="comboBoxStoped" Grid.Column="1" HorizontalAlignment="Left" Margin="5,37,0,0" Grid.Row="3" VerticalAlignment="Top" Width="105" Height="22"/>
+        <ComboBox Name="comboBoxChangePrioretary" Grid.Column="1" HorizontalAlignment="Left" Margin="5,37,0,0" Grid.Row="5" VerticalAlignment="Top" Width="105" Height="22"/>
+        <ComboBox Name="comboBoxPrioretary" Grid.Column="1" HorizontalAlignment="Left" Margin="115,38,0,0" Grid.Row="5" VerticalAlignment="Top" Width="105" Height="22" Grid.ColumnSpan="2"/>
     </Grid>
 </Window>
