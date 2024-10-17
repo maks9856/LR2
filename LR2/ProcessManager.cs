@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 
 namespace LR2
 {
-    public static class ProcessManager
+    public class ProcessManager
     {
         public  delegate void  Message(string message);
         public static event Message? error;
@@ -27,6 +27,8 @@ namespace LR2
             DIRECT_IMPERSONATION = (0x0200)
         }
 
+        
+
         [DllImport("kernel32.dll")]
         static extern IntPtr OpenThread(ThreadAccess dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
         [DllImport("kernel32.dll")]
@@ -34,45 +36,56 @@ namespace LR2
         [DllImport("kernel32.dll")]
         static extern int ResumeThread(IntPtr hThread);
 
-        public static void CreateProcesses(this Process processTemplate, int numberOfProcesses)
+        public void CreateProcesses(int numberOfProcesses)
         {
-            for (int i = 0; i < numberOfProcesses; i++)
-            {
                 try
                 {
-                    var process = new Process
-                    {
-                        StartInfo = new ProcessStartInfo
-                        {
-                            FileName = "C:\\Users\\Macsh\\source\\repos\\ConsoleApp5\\ConsoleApp5\\bin\\Debug\\ConsoleApp5.exe",
-                            Arguments = $"{-0.99} {0.99} {100000}",
-                            UseShellExecute = true,
-                            CreateNoWindow = true
-                        }
-                    };
-                    process.Start();
+                Process process = new Process();
+                var StartInfo = new ProcessStartInfo
+                {
+                    FileName = "C:\\Users\\Macsh\\source\\repos\\ConsoleApp5\\ConsoleApp5\\bin\\Debug\\ConsoleApp5.exe",
+                    Arguments = $"{-0.99} {0.99} {100000}",
+                    CreateNoWindow = false,
+                    UseShellExecute = false,  
+                    
                    
-                    _processes.Add(process);
+
+                };
+                foreach (var pr in process.StartMultipleProcesses(StartInfo, numberOfProcesses))
+                {
+                    process.EnableRaisingEvents = true;
+                    pr.Exited += (sender, e) =>
+                    {
+                        success?.Invoke($"Процес з ID {pr.Id} завершився.");
+                        
+
+                        _processes.Remove(pr);  
+                    };
+                    _processes.Add(pr);
+                    success?.Invoke($"Створено процес з ID {pr.Id}");
+                }
+
                 }
                 catch (Exception ex)
                 {
                     error?.Invoke($"Помилка:{ex}");
                 }
-            }
+            
         }
 
-        public static IEnumerable<int> GetProcessIds(this Process processTemplate)
+        public static IEnumerable<int> GetProcessIds()
         {
             return _processes.Select(p => p.Id);
         }
 
-        public static void DeleteProcess(this Process processTemplate, int processId)
+        public void DeleteProcess(int processId)
         {
             try
             {
                 var process = Process.GetProcessById(processId);
                 process.Kill();
                 _processes.RemoveAll(p => p.Id == processId);
+                success?.Invoke($"Вбито процес з ID{processId}");
             }
             catch (ArgumentException ex)
             {
@@ -84,14 +97,15 @@ namespace LR2
             }
         }
 
-        public static void DeleteAllProcesses(this Process processTemplate)
+        public void DeleteAllProcesses()
         {
-            var processesToTerminate = new List<Process>(_processes);
-            foreach (var process in processesToTerminate)
+            var processesToDelete = new List<Process>(_processes);
+            foreach (var process in processesToDelete)
             {
                 try
                 {
                     process.Kill();
+                    success?.Invoke($"Вбито процес з ID{process.Id}");
                 }
                 catch (Exception ex)
                 {
@@ -101,22 +115,19 @@ namespace LR2
 
             _processes.Clear();
         }
-        public static IEnumerable<ProcessPriorityClass> GetProcessPriorities(this Process processTemplate)
-        {
-            return Enum.GetValues(typeof(ProcessPriorityClass)).Cast<ProcessPriorityClass>();
-        }
 
-        public static void ChangeProcessPriority(this Process processTemplate, int processId, ProcessPriorityClass newPriority)
+
+        public void ChangeProcessPriority(int processId, ProcessPriorityClass newPriority)
         {
             try
             {
                 var process = Process.GetProcessById(processId);
                 process.PriorityClass = newPriority;
-                success?.Invoke($"Успішно поміняний пріорітет у{processId} на{newPriority}");
+                success?.Invoke($"Успішно поміняний пріорітет у проецеса з ID {processId} на{newPriority}");
             }
             catch (ArgumentException)
             {
-               error?.Invoke($"Процес з {processId} не знайдено");
+                error?.Invoke($"Процес з {processId} не знайдено");
             }
             catch (Exception ex)
             {
@@ -124,7 +135,7 @@ namespace LR2
             }
         }
 
-        public static void SuspendProcess(this Process processTemplate, int processId)
+        public void SuspendProcess(int processId)
         {
             try
             {
@@ -137,7 +148,7 @@ namespace LR2
                         SuspendThread(hThread);
                     }
                 }
-                success?.Invoke($"Процес {processId} призупинено.");
+                success?.Invoke($"Процес з ID {processId} призупинено.");
             }
             catch (Exception ex)
             {
@@ -145,10 +156,36 @@ namespace LR2
             }
         }
 
-        public static void ResumeProcess(this Process processTemplate, int processId)
+
+        public void SuspendAllProcess()
+        {
+            var processes=new List<Process>(_processes);
+            try
+            {
+                foreach (var process in processes)
+                {
+                    foreach (ProcessThread thread in process.Threads)
+                    {
+                        IntPtr hThread = OpenThread(ThreadAccess.SUSPEND_RESUME, false, (uint)thread.Id);
+                        if (hThread != IntPtr.Zero)
+                        {
+                            SuspendThread(hThread);
+                        }
+                        
+                    }
+                    success?.Invoke($"Процес з ID {process.Id} призупинено.");
+                }
+            }
+            catch (Exception ex)
+            {
+                error?.Invoke($"Помилка: {ex}");
+            }
+        }
+        public void ResumeProcess( int processId)
         {
             try
             {
+                
                 var process = Process.GetProcessById(processId);
                 foreach (ProcessThread thread in process.Threads)
                 {
@@ -165,5 +202,31 @@ namespace LR2
                 error?.Invoke($"Помилка при відновленні процесу {processId}: {ex}");
             }
         }
+
+        public void ResumeAllProcess()
+        {
+            try
+            {
+
+                foreach (var process in _processes)
+                {
+                    foreach (ProcessThread thread in process.Threads)
+                    {
+                        IntPtr hThread = OpenThread(ThreadAccess.SUSPEND_RESUME, false, (uint)thread.Id);
+                        if (hThread != IntPtr.Zero)
+                        {
+                            ResumeThread(hThread);
+                        }
+                    }
+                    success?.Invoke($"Процес {process.Id} відновлено.");
+                }
+            }
+            catch (Exception ex)
+            {
+                error?.Invoke($"Помилка: {ex}");
+            }
+        }
+
+        
     }
 }

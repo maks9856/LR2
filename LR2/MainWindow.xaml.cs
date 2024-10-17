@@ -12,6 +12,8 @@ namespace LR2
         {
             InitializeComponent();
             LoadProcessPriorities();
+            ProcessManager.success += MessageToList;
+            ProcessManager.error += Error;
         }
 
         private void LoadProcessPriorities()
@@ -30,29 +32,32 @@ namespace LR2
             comboBoxRemove.Items.Clear();
             comboBoxStoped.Items.Clear();
             comboBoxChangePrioretary.Items.Clear();
-
-            var processManager = new Process(); 
-            foreach (var processId in processManager.GetProcessIds())
+            comboBoxRestore.Items.Clear();
+            foreach (var processId in ProcessManager.GetProcessIds())
             {
                 comboBoxRemove.Items.Add(processId);
                 comboBoxStoped.Items.Add(processId);
                 comboBoxChangePrioretary.Items.Add(processId);
+                comboBoxRestore.Items.Add(processId);
             }
         }
 
         private void ButtonCreate_Click(object sender, RoutedEventArgs e)
         {
-            var process = new Process();
-            process.CreateProcesses((int)NumberUpDown.Value);
-            LoadProcesses();
+            if (NumberUpDown.Value is int NumberOfProcess)
+            {
+                var processManager = new ProcessManager();
+                processManager.CreateProcesses(NumberOfProcess);
+                LoadProcesses();
+            }
         }
 
         private void ButtonKill_Click(object sender, RoutedEventArgs e)
         {
             if (comboBoxRemove.SelectedItem is int selectedProcessId)
             {
-                var process = new Process();
-                process.DeleteProcess(selectedProcessId);
+                var processManager = new ProcessManager();
+                processManager.DeleteProcess(selectedProcessId);
                 LoadProcesses();
             }
             else
@@ -63,8 +68,8 @@ namespace LR2
 
         private void ButtonKillAll_Click(object sender, RoutedEventArgs e)
         {
-            var process = new Process();
-            process.DeleteAllProcesses();
+            var processManager = new ProcessManager();
+            processManager.DeleteAllProcesses();
             LoadProcesses();
         }
 
@@ -73,7 +78,7 @@ namespace LR2
             if (comboBoxChangePrioretary.SelectedItem is int selectedProcessId &&
                 comboBoxPrioretary.SelectedItem is ProcessPriorityClass newPriority)
             {
-               var process=new Process();
+               var process=new ProcessManager();
                process.ChangeProcessPriority(selectedProcessId, newPriority);
             }
             else
@@ -84,9 +89,41 @@ namespace LR2
 
         private void ButtonStoped_Click(object sender, RoutedEventArgs e)
         {
-            
-            Process process = new Process();
-            process.CompleteProcess((int)comboBoxStoped.SelectedItem);
+            if (comboBoxStoped.SelectedItem is int selectedProcessId)
+            {
+                var process = new ProcessManager();
+                process.SuspendProcess(selectedProcessId);
+            }
+        }
+
+        private void ButtonStopedAll_Click(object sender, RoutedEventArgs e)
+        {
+            var process = new ProcessManager();
+            process.SuspendAllProcess();
+        }
+
+        private void ButtonRestore_Click(object sender, RoutedEventArgs e)
+        {
+            if (comboBoxRestore.SelectedItem is int selectedProcessId)
+            {
+                var process = new ProcessManager();
+                process.ResumeProcess(selectedProcessId);
+            }
+        }
+
+        private void ButtonResroreAll_Click(object sender, RoutedEventArgs e)
+        {
+            var process = new ProcessManager();
+            process.ResumeAllProcess();
+        }
+
+        public void MessageToList(string message)
+        {
+            listOfEvent.Items.Add(message);
+        }
+        public void Error(string message)
+        {
+            MessageBox.Show(message);
         }
     }
 }
