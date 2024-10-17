@@ -47,7 +47,7 @@ namespace LR2
             LoadProcesses();
         }
 
-        private void ButtonRemove_Click(object sender, RoutedEventArgs e)
+        private void ButtonKill_Click(object sender, RoutedEventArgs e)
         {
             if (comboBoxRemove.SelectedItem is int selectedProcessId)
             {
@@ -57,11 +57,11 @@ namespace LR2
             }
             else
             {
-                MessageBox.Show("Please select a process to remove.");
+              
             }
         }
 
-        private void ButtonRemoveAll_Click(object sender, RoutedEventArgs e)
+        private void ButtonKillAll_Click(object sender, RoutedEventArgs e)
         {
             var process = new Process();
             process.DeleteAllProcesses();
@@ -78,13 +78,15 @@ namespace LR2
             }
             else
             {
-                MessageBox.Show("Please select both a process and a new priority.");
+               
             }
         }
 
         private void ButtonStoped_Click(object sender, RoutedEventArgs e)
         {
             
+            Process process = new Process();
+            process.CompleteProcess((int)comboBoxStoped.SelectedItem);
         }
     }
 }

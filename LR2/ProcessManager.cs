@@ -1,21 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace LR2
 {
     public static class ProcessManager
     {
+        public  delegate void  Message(string message);
+        public static event Message? error;
+        public static event Message? success;
         private static readonly List<Process> _processes = new List<Process>();
+        [Flags]
+        public enum ThreadAccess : int
+        {
+            TERMINATE = (0x0001),
+            SUSPEND_RESUME = (0x0002),
+            GET_CONTEXT = (0x0008),
+            SET_CONTEXT = (0x0010),
+            SET_INFORMATION = (0x0020),
+            QUERY_INFORMATION = (0x0040),
+            SET_THREAD_TOKEN = (0x0080),
+            IMPERSONATE = (0x0100),
+            DIRECT_IMPERSONATION = (0x0200)
+        }
+
+        [DllImport("kernel32.dll")]
+        static extern IntPtr OpenThread(ThreadAccess dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
+        [DllImport("kernel32.dll")]
+        static extern uint SuspendThread(IntPtr hThread);
+        [DllImport("kernel32.dll")]
+        static extern int ResumeThread(IntPtr hThread);
 
         public static void CreateProcesses(this Process processTemplate, int numberOfProcesses)
         {
-            if (numberOfProcesses <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(numberOfProcesses), "The number of processes must be greater than zero.");
-            }
-
             for (int i = 0; i < numberOfProcesses; i++)
             {
                 try
@@ -25,17 +45,18 @@ namespace LR2
                         StartInfo = new ProcessStartInfo
                         {
                             FileName = "C:\\Users\\Macsh\\source\\repos\\ConsoleApp5\\ConsoleApp5\\bin\\Debug\\ConsoleApp5.exe",
-                            Arguments = $"{0} {0.5} {10}",
+                            Arguments = $"{-0.99} {0.99} {100000}",
                             UseShellExecute = true,
                             CreateNoWindow = true
                         }
                     };
                     process.Start();
+                   
                     _processes.Add(process);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error starting process: {ex.Message}");
+                    error?.Invoke($"Помилка:{ex}");
                 }
             }
         }
@@ -55,11 +76,11 @@ namespace LR2
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine($"Process with ID {processId} not found: {ex.Message}");
+                error?.Invoke($"Помилка: не знайдено ID:{processId}   {ex}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to delete process: {ex.Message}");
+                error?.Invoke($"Помилка:{ex}");
             }
         }
 
@@ -74,13 +95,12 @@ namespace LR2
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error terminating process ID {process.Id}: {ex.Message}");
+                    error?.Invoke($"Помилка:{ex}");
                 }
             }
 
             _processes.Clear();
         }
-
         public static IEnumerable<ProcessPriorityClass> GetProcessPriorities(this Process processTemplate)
         {
             return Enum.GetValues(typeof(ProcessPriorityClass)).Cast<ProcessPriorityClass>();
@@ -92,15 +112,57 @@ namespace LR2
             {
                 var process = Process.GetProcessById(processId);
                 process.PriorityClass = newPriority;
-                Console.WriteLine($"Successfully changed priority of process ID {processId} to {newPriority}.");
+                success?.Invoke($"Успішно поміняний пріорітет у{processId} на{newPriority}");
             }
             catch (ArgumentException)
             {
-                Console.WriteLine($"Process with ID {processId} not found.");
+               error?.Invoke($"Процес з {processId} не знайдено");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error changing process priority: {ex.Message}");
+                error?.Invoke($"Помилка:{ex}");
+            }
+        }
+
+        public static void SuspendProcess(this Process processTemplate, int processId)
+        {
+            try
+            {
+                var process = Process.GetProcessById(processId);
+                foreach (ProcessThread thread in process.Threads)
+                {
+                    IntPtr hThread = OpenThread(ThreadAccess.SUSPEND_RESUME, false, (uint)thread.Id);
+                    if (hThread != IntPtr.Zero)
+                    {
+                        SuspendThread(hThread);
+                    }
+                }
+                success?.Invoke($"Процес {processId} призупинено.");
+            }
+            catch (Exception ex)
+            {
+                error?.Invoke($"Помилка при призупиненні процесу {processId}: {ex}");
+            }
+        }
+
+        public static void ResumeProcess(this Process processTemplate, int processId)
+        {
+            try
+            {
+                var process = Process.GetProcessById(processId);
+                foreach (ProcessThread thread in process.Threads)
+                {
+                    IntPtr hThread = OpenThread(ThreadAccess.SUSPEND_RESUME, false, (uint)thread.Id);
+                    if (hThread != IntPtr.Zero)
+                    {
+                        ResumeThread(hThread);
+                    }
+                }
+                success?.Invoke($"Процес {processId} відновлено.");
+            }
+            catch (Exception ex)
+            {
+                error?.Invoke($"Помилка при відновленні процесу {processId}: {ex}");
             }
         }
     }
