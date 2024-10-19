@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Windows;
 
 namespace LR2
 {
@@ -53,12 +54,13 @@ namespace LR2
                 };
                 foreach (var pr in process.StartMultipleProcesses(StartInfo, numberOfProcesses))
                 {
-                    process.EnableRaisingEvents = true;
+                    pr.EnableRaisingEvents = true;
                     pr.Exited += (sender, e) =>
                     {
-                        success?.Invoke($"Процес з ID {pr.Id} завершився.");
-                        
-
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            success?.Invoke($"Процес з ID {pr.Id} завершився.");
+                        });
                         _processes.Remove(pr);  
                     };
                     _processes.Add(pr);
