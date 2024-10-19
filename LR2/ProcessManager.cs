@@ -12,7 +12,6 @@ namespace LR2
         public delegate void Message(string message);
         public static event Message? error;
         public static event Message? success;
-
         private static readonly List<Process> _processes = new List<Process>();
         private static readonly Dictionary<int, bool> _processStatus = new Dictionary<int, bool>();
 
@@ -55,10 +54,12 @@ namespace LR2
                     pr.EnableRaisingEvents = true;
                     pr.Exited += (sender, e) =>
                     {
+                        var elapsedTime = pr.TotalProcessorTime;
                         Application.Current.Dispatcher.Invoke(() =>
                         {
-                            success?.Invoke($"Процес з ID {pr.Id} завершився.");
+                            success?.Invoke($"Процес з ID {pr.Id} завершився.Час обчислення: {elapsedTime}");
                         });
+                        
                         _processes.Remove(pr);
                         _processStatus.Remove(pr.Id);
                     };
@@ -141,7 +142,7 @@ namespace LR2
         {
             try
             {
-                if (_processStatus.ContainsKey(processId) && _processStatus[processId] == false)
+                if (_processStatus.ContainsKey(processId) && !_processStatus[processId])
                 {
                     success?.Invoke($"Процес з ID {processId} вже був зупинений.");
                     return;
@@ -172,7 +173,7 @@ namespace LR2
             {
                 foreach (var process in processes)
                 {
-                    if (_processStatus[process.Id] == false)
+                    if (!_processStatus[process.Id])
                     {
                         success?.Invoke($"Процес з ID {process.Id} вже був зупинений.");
                         continue;
@@ -200,7 +201,7 @@ namespace LR2
         {
             try
             {
-                if (_processStatus.ContainsKey(processId) && _processStatus[processId] == true)
+                if (_processStatus.ContainsKey(processId) && _processStatus[processId])
                 {
                     success?.Invoke($"Процес з ID {processId} вже був запущений.");
                     return;
@@ -230,7 +231,7 @@ namespace LR2
             {
                 foreach (var process in _processes)
                 {
-                    if (_processStatus[process.Id] == true)
+                    if (_processStatus[process.Id])
                     {
                         success?.Invoke($"Процес з ID {process.Id} вже був запущений.");
                         continue;
