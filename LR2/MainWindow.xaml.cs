@@ -14,6 +14,7 @@ namespace LR2
             LoadProcessPriorities();
             ProcessManager.success += MessageToList;
             ProcessManager.error += Error;
+            ProcessManager.ProcessExited +=LoadProcesses;
         }
 
         private void LoadProcessPriorities()
@@ -27,7 +28,7 @@ namespace LR2
             }
         }
 
-        private void LoadProcesses()
+        public void LoadProcesses()
         {
             comboBoxRemove.Items.Clear();
             comboBoxStoped.Items.Clear();

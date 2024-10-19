@@ -12,9 +12,10 @@ namespace LR2
         public delegate void Message(string message);
         public static event Message? error;
         public static event Message? success;
+        public static event Action?  ProcessExited;
         private static readonly List<Process> _processes = new List<Process>();
         private static readonly Dictionary<int, bool> _processStatus = new Dictionary<int, bool>();
-
+        private static readonly Dictionary<int, bool> _killedProcesses = new Dictionary<int, bool>();
         [Flags]
         public enum ThreadAccess : int
         {
@@ -55,17 +56,25 @@ namespace LR2
                     pr.Exited += (sender, e) =>
                     {
                         var elapsedTime = pr.TotalProcessorTime;
-                        Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            success?.Invoke($"Процес з ID {pr.Id} завершився.Час обчислення: {elapsedTime}");
-                        });
-                        
                         _processes.Remove(pr);
                         _processStatus.Remove(pr.Id);
-                    };
-                    _processes.Add(pr);
-                    _processStatus[pr.Id] = true; 
 
+                       
+                        if (_killedProcesses.ContainsKey(pr.Id) && _killedProcesses[pr.Id])
+                        {
+                            _killedProcesses.Remove(pr.Id);
+                            return; 
+                        }
+
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            success?.Invoke($"Процес з ID {pr.Id} завершився. Час обчислення: {elapsedTime}");
+                            ProcessExited?.Invoke();
+                        });
+                    };
+
+                    _processes.Add(pr);
+                    _processStatus[pr.Id] = true;
                     success?.Invoke($"Створено процес з ID {pr.Id}");
                 }
             }
@@ -85,14 +94,15 @@ namespace LR2
             try
             {
                 var process = Process.GetProcessById(processId);
+                _killedProcesses[processId] = true; 
                 process.Kill();
                 _processes.RemoveAll(p => p.Id == processId);
-                _processStatus.Remove(processId); 
+                _processStatus.Remove(processId);
                 success?.Invoke($"Вбито процес з ID {processId}");
             }
             catch (ArgumentException ex)
             {
-                error?.Invoke($"Помилка: не знайдено ID:{processId}   {ex}");
+                error?.Invoke($"Помилка: не знайдено ID:{processId} {ex}");
             }
             catch (Exception ex)
             {
@@ -107,8 +117,9 @@ namespace LR2
             {
                 try
                 {
+                    _killedProcesses[process.Id] = true; 
                     process.Kill();
-                    _processStatus.Remove(process.Id); 
+                    _processStatus.Remove(process.Id);
                     success?.Invoke($"Вбито процес з ID {process.Id}");
                 }
                 catch (Exception ex)
